@@ -1,0 +1,49 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color: #f8fafc;
+  background: #090b1a;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+body {
+  min-width: 320px;
+  min-height: 100vh;
+  margin: 0;
+  background:
+    radial-gradient(circle at 18% 12%, rgba(236, 72, 153, 0.22), transparent 28rem),
+    radial-gradient(circle at 88% 8%, rgba(37, 99, 235, 0.25), transparent 30rem),
+    linear-gradient(135deg, #080a18 0%, #151133 45%, #08213a 100%);
+}
+
+body::before {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  content: "";
+  background-image:
+    radial-gradient(circle, rgba(255,255,255,0.72) 1px, transparent 1px),
+    radial-gradient(circle, rgba(255,255,255,0.32) 1px, transparent 1px);
+  background-position: 0 0, 28px 36px;
+  background-size: 80px 80px, 120px 120px;
+  opacity: 0.28;
+}
+
+@layer components {
+  .glass {
+    @apply border border-white/15 bg-white/[0.08] shadow-glow backdrop-blur-xl;
+  }
+
+  .field {
+    @apply w-full rounded-md border border-white/15 bg-white/10 px-3 py-2 text-sm text-slate-50 outline-none transition focus:border-cyan-300;
+  }
+
+  .label {
+    @apply text-sm font-medium text-slate-200;
+  }
+}
