@@ -1,7 +1,6 @@
 # Starheart / 星心
 
 Starheart 是一个纯前端轻量娱乐工具站，包含 MBTI 测试、星座讲解、形象卡片、昵称生成器和幸运号码生成器。
-![Starheart Aries](https://raw.githubusercontent.com/Whyregister/Starheart/main/public/assets/cards/zodiac/aries.webp)
 
 ## 形象图片
 
