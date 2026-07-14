@@ -180,7 +180,10 @@ http://127.0.0.1:8787
 
 数据抓取策略：
 
-- 优先使用中彩网开奖详情 JSONP 接口。
+- 如果配置了 `JUHE_LOTTERY_KEY`，优先使用聚合数据历史开奖接口作为 VPS 友好的第三方数据源。
+- 聚合数据接口：`https://apis.juhe.cn/lottery/history`，参数使用 `lottery_id=ssq`。
+- 聚合数据通常只提供开奖号码，不保证提供真实红球出球顺序；使用该源时红球原顺序会退化为接口返回顺序。
+- 未配置聚合数据 key 或聚合数据失败时，继续尝试中彩网开奖详情 JSONP 接口。
 - 期号列表接口：`transactionType=10001003`，当前抓取 160 期作为近一年训练窗口。
 - 单期开奖详情接口：`transactionType=10001002`。
 - 红球出球顺序字段：`seqFrontWinningNum`。
@@ -193,6 +196,7 @@ http://127.0.0.1:8787
 
 - 同步成功后写入 `server/cache/ssq-history.json`。
 - `server/cache/` 已加入 `.gitignore`，不提交运行时缓存。
+- VPS 上建议通过 PM2 配置 `JUHE_LOTTERY_KEY`，再调用 `/api/ssq/sync` 刷新缓存。
 
 模型策略：
 

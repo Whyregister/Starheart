@@ -9,6 +9,7 @@ const cachePath = join(__dirname, "cache", "ssq-history.json");
 const historyWindowSize = 160;
 const listEndpoint = `https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=ssq&issueCount=${historyWindowSize}`;
 const zhcwEndpoint = "https://jc.zhcw.com/port/client_json.php";
+const juheHistoryEndpoint = "https://apis.juhe.cn/lottery/history";
 
 function padBall(value) {
   return String(Number(value)).padStart(2, "0");
@@ -20,6 +21,12 @@ function splitBalls(value) {
     .map((item) => item.trim())
     .filter(Boolean)
     .map(padBall);
+}
+
+function splitJuheLotteryResult(value) {
+  const balls = splitBalls(value);
+  if (balls.length < 7) return { red: [], blue: "" };
+  return { red: balls.slice(0, 6), blue: balls[6] };
 }
 
 function extractFirstSixPlusBlue(text) {
@@ -136,6 +143,44 @@ async function fetchZhcwDraws(count = historyWindowSize) {
   return normalizeSsqDraws(draws);
 }
 
+async function fetchJuheDraws(count = historyWindowSize) {
+  const key = process.env.JUHE_LOTTERY_KEY?.trim();
+  if (!key) return [];
+
+  const pageSize = 50;
+  const pageCount = Math.ceil(count / pageSize);
+  const draws = [];
+
+  for (let page = 1; page <= pageCount; page += 1) {
+    const params = new URLSearchParams({
+      key,
+      lottery_id: "ssq",
+      page_size: String(pageSize),
+      page: String(page)
+    });
+    const payload = await fetchJson(`${juheHistoryEndpoint}?${params.toString()}`);
+    if (payload.error_code !== 0) throw new Error(`聚合数据接口失败：${payload.reason || payload.error_code}`);
+
+    const rows = payload.result?.lotteryResList;
+    if (!Array.isArray(rows)) break;
+
+    for (const row of rows) {
+      const { red, blue } = splitJuheLotteryResult(row.lottery_res);
+      draws.push({
+        issue: String(row.lottery_no || ""),
+        drawDate: String(row.lottery_date || ""),
+        redOrder: red,
+        redSorted: [...red].sort((a, b) => Number(a) - Number(b)),
+        blue,
+        sourceUrl: juheHistoryEndpoint,
+        fetchedAt: new Date().toISOString()
+      });
+    }
+  }
+
+  return normalizeSsqDraws(draws).slice(0, count);
+}
+
 export async function readCachedDraws() {
   try {
     const content = await readFile(cachePath, "utf8");
@@ -154,6 +199,17 @@ export async function writeCachedDraws(draws) {
 export async function getSsqHistory({ force = false } = {}) {
   const cached = await readCachedDraws();
   if (!force && cached.length > 0) return { draws: cached, source: "cache" };
+  let providerWarning = "";
+
+  try {
+    const juhe = await fetchJuheDraws(historyWindowSize);
+    if (juhe.length > 0) {
+      await writeCachedDraws(juhe);
+      return { draws: juhe, source: "juhe", warning: "聚合数据历史接口不提供真实红球出球顺序，当前红球原顺序使用接口返回号码顺序。" };
+    }
+  } catch (error) {
+    providerWarning = error.message;
+  }
 
   try {
     const remote = await fetchZhcwDraws(historyWindowSize);
@@ -169,7 +225,7 @@ export async function getSsqHistory({ force = false } = {}) {
         return { draws: remote, source: "remote", warning: "中彩网出球顺序接口不可用，已使用普通开奖列表兜底。" };
       }
     } catch {
-      if (cached.length > 0) return { draws: cached, source: "cache", warning: error.message };
+      if (cached.length > 0) return { draws: cached, source: "cache", warning: providerWarning || error.message };
     }
   }
 
