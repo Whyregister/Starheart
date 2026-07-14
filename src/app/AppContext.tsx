@@ -24,7 +24,7 @@ type AppContextValue = {
 const AppContext = createContext<AppContextValue | undefined>(undefined);
 
 export function AppProvider({ children }: { children: React.ReactNode }) {
-  const [selectedZodiacId, setSelectedZodiacId] = useState("aries");
+  const [selectedZodiacId, setSelectedZodiacId] = useState("cancer");
   const [selectedMBTIType, setSelectedMBTIType] = useState("INFP");
   const [mbtiAnswers, setMbtiAnswers] = useState<Record<string, number>>({});
   const [mbtiResult, setMbtiResult] = useState<MBTIResult>();

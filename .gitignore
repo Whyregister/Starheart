@@ -4,3 +4,4 @@ dist/
 vite-dev*.log
 .env
 .env.*
+server/cache/
