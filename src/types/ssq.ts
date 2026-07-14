@@ -12,13 +12,16 @@ export type SsqGeneratedTicket = {
   redOrder: string[];
   redSorted: string[];
   blue: string;
-  model: "weighted-history";
+  model: "weighted-history" | "trained-one-year-v2";
   seed: string;
   generatedAt: string;
   factors: {
     zodiacId: string;
     mbtiType: string;
     historySize: number;
+    trainingWindow?: string;
+    features?: string[];
+    score?: number;
   };
 };
 

@@ -38,7 +38,7 @@ const server = createServer(async (request, response) => {
     }
 
     if (request.method === "GET" && url.pathname === "/api/ssq/history") {
-      const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 60), 1), 120);
+      const limit = Math.min(Math.max(Number(url.searchParams.get("limit") || 60), 1), 180);
       const history = await getSsqHistory();
       return sendJson(response, 200, { ...history, draws: history.draws.slice(0, limit) });
     }

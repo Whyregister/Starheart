@@ -151,7 +151,7 @@ npx vitest run
 - `.trend-red-hit`：红球命中点，内部数字为出球顺序。
 - `.trend-blue-hit`：蓝球命中点。
 
-## 7.1 双色球后端
+## 7.1 双色球后端与训练模型
 
 目录：`server/`
 
@@ -174,14 +174,14 @@ http://127.0.0.1:8787
 | 接口 | 方法 | 用途 |
 | --- | --- | --- |
 | `/api/ssq/health` | GET | 健康检查 |
-| `/api/ssq/history?limit=60` | GET | 获取最近双色球历史 |
+| `/api/ssq/history?limit=60` | GET | 获取最近双色球历史，最大可取 180 条 |
 | `/api/ssq/generate` | POST | 根据星座、MBTI、历史数据生成双色球 |
 | `/api/ssq/sync` | POST | 强制同步远程开奖数据 |
 
 数据抓取策略：
 
 - 优先使用中彩网开奖详情 JSONP 接口。
-- 期号列表接口：`transactionType=10001003`。
+- 期号列表接口：`transactionType=10001003`，当前抓取 160 期作为近一年训练窗口。
 - 单期开奖详情接口：`transactionType=10001002`。
 - 红球出球顺序字段：`seqFrontWinningNum`。
 - 红球升序字段：`frontWinningNum`。
@@ -198,10 +198,14 @@ http://127.0.0.1:8787
 
 - 前端模型文件：`src/lib/ssqModel.ts`。
 - 后端模型文件：`server/ssq-model.mjs`。
-- 当前为轻量历史加权模型，不是中奖预测模型。
-- 使用历史频率、近期权重、星座、MBTI 和时间种子生成结果。
+- 当前模型名：`trained-one-year-v2`。
+- 样本窗口：最近 160 期双色球开奖数据，约等于一年内样本。
+- 训练特征：历史频率、近期权重、遗漏值、红球出球位置、三区均衡、奇偶均衡。
+- 生成方式：先根据训练权重生成多组候选号码，再用三区、奇偶、跨度和权重综合评分，选择分数较高的一组。
+- 星座、MBTI 和当前时间种子参与随机种子构造，用于让生成结果具备可复现的个性扰动。
 - 红球不重复，范围 01-33。
 - 蓝球范围 01-16。
+- 该模型只做娱乐向概率加权和结构约束，不保证、不暗示、也不能预测中奖。
 
 ## 8. 星座资料
 
@@ -348,8 +352,8 @@ https://raw.githubusercontent.com/Whyregister/Starheart/main/public/assets/cards
 | `src/lib/format.ts` | 日期种子格式化 |
 | `src/lib/validators.ts` | 通用校验 |
 | `src/lib/celestial.ts` | 根据当前时间返回太阳/月亮模式 |
-| `src/lib/ssqModel.ts` | 前端双色球历史加权模型和数据标准化 |
-| `server/ssq-model.mjs` | 后端双色球历史加权模型 |
+| `src/lib/ssqModel.ts` | 前端双色球 trained-one-year-v2 模型和数据标准化 |
+| `server/ssq-model.mjs` | 后端双色球 trained-one-year-v2 模型 |
 | `server/ssq-data.mjs` | 双色球远程抓取、出球顺序清洗和缓存 |
 | `server/index.mjs` | 后端 API 服务入口 |
 
@@ -441,32 +445,7 @@ location /api/ {
 
 ## 16. 当前 Git 状态备注
 
-截至 2026-07-09，本地存在未提交改动：
-
-- `.gitignore`
-- `detail.md`
-- `docs/superpowers/plans/2026-07-09-ssq-backend-model.md`
-- `package.json`
-- `vite.config.ts`
-- `src/index.css`
-- `src/pages/HomePage.tsx`
-- `src/pages/LuckyPage.tsx`
-- `src/lib/celestial.ts`
-- `src/lib/celestial.test.ts`
-- `src/lib/ssqModel.ts`
-- `src/lib/ssqModel.test.ts`
-- `src/types/ssq.ts`
-- `src/data/sampleSsqDraws.ts`
-- `server/index.mjs`
-- `server/ssq-data.mjs`
-- `server/ssq-model.mjs`
-- `server/sample-ssq-data.mjs`
-- `public/assets/cards/zodiac-grid.webp`
-- `public/assets/cards/mbti-grid.webp`
-- `public/assets/cards/starheart-cast.webp`
-- `QQ20260625-231656.png` 在工作区显示为已删除
-
-这些改动对应最近的首页视觉调整、双色球后端与页面改造、太阳/月亮逻辑、合成图片资源和项目档案更新。提交或推送前需要再次确认是否保留删除的旧截图文件。
+截至 2026-07-15，双色球生成模型已升级为 `trained-one-year-v2`，使用最近 160 期样本训练，并同步更新前端共享模型、Node 后端模型、类型定义、测试和本文档。
 
 ## 17. 维护规则
 

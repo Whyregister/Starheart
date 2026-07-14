@@ -37,4 +37,30 @@ describe("ssq model", () => {
     expect(Number(first.blue)).toBeGreaterThanOrEqual(1);
     expect(Number(first.blue)).toBeLessThanOrEqual(16);
   });
+
+  it("trains with a one-year sample window and exposes model features", () => {
+    const oneYearHistory = Array.from({ length: 190 }, (_, index): SsqDraw => {
+      const start = (index % 28) + 1;
+      const redOrder = Array.from({ length: 6 }, (_, offset) => String(((start + offset * 3 - 1) % 33) + 1).padStart(2, "0"));
+      return {
+        issue: String(2026000 + index),
+        drawDate: "2026-01-01",
+        redOrder,
+        redSorted: [...redOrder].sort((a, b) => Number(a) - Number(b)),
+        blue: String((index % 16) + 1).padStart(2, "0")
+      };
+    });
+
+    const ticket = generateSsqTicket({
+      zodiacId: "cancer",
+      mbtiType: "INFP",
+      history: oneYearHistory,
+      seed: "20260715120000"
+    });
+
+    expect(ticket.model).toBe("trained-one-year-v2");
+    expect(ticket.factors.historySize).toBe(160);
+    expect(ticket.factors.trainingWindow).toBe("last-160-draws");
+    expect(ticket.factors.features).toEqual(["frequency", "recency", "omission", "position", "zone-balance", "odd-even-balance"]);
+  });
 });

@@ -6,7 +6,8 @@ import { normalizeSsqDraws } from "./ssq-model.mjs";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const cachePath = join(__dirname, "cache", "ssq-history.json");
-const listEndpoint = "https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=ssq&issueCount=80";
+const historyWindowSize = 160;
+const listEndpoint = `https://www.cwl.gov.cn/cwl_admin/front/cwlkj/search/kjxx/findDrawNotice?name=ssq&issueCount=${historyWindowSize}`;
 const zhcwEndpoint = "https://jc.zhcw.com/port/client_json.php";
 
 function padBall(value) {
@@ -95,7 +96,7 @@ async function fetchRemoteDraws() {
   const rows = Array.isArray(payload.result) ? payload.result : Array.isArray(payload.data) ? payload.data : [];
   const mapped = [];
 
-  for (const row of rows.slice(0, 80)) {
+  for (const row of rows.slice(0, historyWindowSize)) {
     let redOrder = [];
     try {
       redOrder = await tryFetchDrawOrder(row);
@@ -122,7 +123,7 @@ async function fetchZhcwDraw(issue) {
   };
 }
 
-async function fetchZhcwDraws(count = 80) {
+async function fetchZhcwDraws(count = historyWindowSize) {
   const url = `${zhcwEndpoint}?transactionType=10001003&lotteryId=1&count=${count}&tt=${Math.random()}&callback=cb`;
   const payload = await fetchJsonp(url);
   const issues = Array.isArray(payload.issue) ? payload.issue : [];
@@ -155,7 +156,7 @@ export async function getSsqHistory({ force = false } = {}) {
   if (!force && cached.length > 0) return { draws: cached, source: "cache" };
 
   try {
-    const remote = await fetchZhcwDraws(80);
+    const remote = await fetchZhcwDraws(historyWindowSize);
     if (remote.length > 0) {
       await writeCachedDraws(remote);
       return { draws: remote, source: "remote" };
